@@ -55,6 +55,8 @@ impl SnowflakeIdGenerator {
                 now_millis += 1;
                 self.last_time_millis = now_millis;
             }
+        } else {
+            self.last_time_millis = now_millis;
         }
 
         // 64 位，统一左移动 22位，保存后42位 ， xxxx， 最后自增保留12位
@@ -131,7 +133,7 @@ impl SnowflakeIdBucket {
         // 7 ns/iter
         // after self.bucket.push(self.snowflake_id_generator.lazy_generate());
 
-        //45 ns/iter
+        //500 ns/iter
         // after self.bucket.push(self.snowflake_id_generator.real_time_generate());
         if self.bucket.is_empty() {
             self.generate_ids();
@@ -140,19 +142,17 @@ impl SnowflakeIdBucket {
     }
 
     pub(crate) fn generate_ids(&mut self) {
-        for _ in 0..4095 {
+        // 30,350 -- 50,000 ns/iter
+        //self.bucket.push(self.snowflake_id_generator.lazy_generate());
 
-            // 30,350 -- 50,000 ns/iter
-            //self.bucket.push(self.snowflake_id_generator.lazy_generate());
-            
-            // 1,107,103 -- 1,035,018 ns/iter
-            //self.bucket.push(self.snowflake_id_generator.generate());
+        // 1,107,103 -- 1,035,018 ns/iter
+        //self.bucket.push(self.snowflake_id_generator.generate());
 
-            // 408,433 -- 407,926 ns/iter
-            //self.bucket.push(self.snowflake_id_generator.real_time_generate());
+        // 2,201,325 -- 2,082,187 ns/iter
+        //self.bucket.push(self.snowflake_id_generator.real_time_generate());
 
-            self.bucket
-                .push(self.snowflake_id_generator.lazy_generate());
+        for _ in 0..4091 {
+            self.bucket.push(self.snowflake_id_generator.generate());
         }
     }
 }
@@ -165,16 +165,63 @@ mod tests {
 
     #[test]
     fn test_generate() {
-        let mut idgen = SnowflakeIdGenerator::new(1, 1);
+        let mut id_generator = SnowflakeIdGenerator::new(1, 1);
         let mut ids = vec![];
 
-        for _ in 0..10 {
-            ids.push(idgen.generate());
-        }
+        for _ in 0..99 {
+            for _ in 0..10000 {
+                ids.push(id_generator.generate());
+            }
 
-        for id in ids {
-            println!("id: {}", id);
-            assert!(format!("{}", id).len() >= 18);
+            ids.sort();
+            ids.dedup();
+
+            assert_eq!(10000, ids.len());
+            println!("{}", ids[9999]);
+
+            ids.clear();
+        }
+    }
+
+
+    #[test]
+    fn test_real_time_generate() {
+        let mut id_generator = SnowflakeIdGenerator::new(1, 1);
+        let mut ids = vec![];
+
+        for _ in 0..99 {
+            for _ in 0..10000 {
+                ids.push(id_generator.real_time_generate());
+            }
+
+            ids.sort();
+            ids.dedup();
+
+            assert_eq!(10000, ids.len());
+            println!("{}", ids[9999]);
+
+            ids.clear();
+        }
+    }
+
+
+    #[test]
+    fn test_lazy_generate() {
+        let mut id_generator = SnowflakeIdGenerator::new(1, 1);
+        let mut ids = vec![];
+
+        for _ in 0..99 {
+            for _ in 0..10000 {
+                ids.push(id_generator.lazy_generate());
+            }
+
+            ids.sort();
+            ids.dedup();
+
+            assert_eq!(10000, ids.len());
+            println!("{}", ids[9999]);
+            
+            ids.clear();
         }
     }
 
