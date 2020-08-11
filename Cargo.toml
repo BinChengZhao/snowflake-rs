@@ -1,13 +1,13 @@
 [package]
-name = "snowflake-rs"
-version = "0.1.0"
+name = "rs-snowflake"
+version = "0.2.0"
 authors = ["BinChengZhao <binchengZhao@outlook.com>"]
 edition = "2018"
 repository = "https://github.com/BinChengZhao/snowflake-rs.git"
 documentation = "https://docs.rs/rs-snowflake"
 readme = "README.md"
 description = "The snowflake algorithm rust version."
-keywords = [ "snowflake", "distributed id", "speediness", "uniqueness", "time", "auto-increment" ]
+keywords = [ "snowflake", "distributed-id", "speediness", "uniqueness", "auto-increment" ]
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
