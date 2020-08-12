@@ -46,6 +46,8 @@ impl SnowflakeIdGenerator {
     /// let id_generator = SnowflakeIdGenerator::new(1, 1);
     /// ```
     pub fn new(machine_id: i32, node_id: i32) -> SnowflakeIdGenerator {
+
+        //TODO:limit the maximum of input args machine_id and node_id 
         let last_time_millis = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went mackward")
@@ -80,10 +82,13 @@ impl SnowflakeIdGenerator {
             .expect("Time went mackward")
             .as_millis() as i64;
 
+        //TODO:supplement code for 'clock is moving backwards situation'..
+
         //must use real-time millis generate.
         if now_millis == self.last_time_millis {
             //if that millis is exaust, wait....
             if self.idx == 0 {
+                //TODO: Relace sleep with loop. 
                 sleep(Duration::from_millis(1));
                 now_millis += 1;
                 self.last_time_millis = now_millis;
@@ -125,16 +130,19 @@ impl SnowflakeIdGenerator {
                 .expect("Time went mackward")
                 .as_millis() as i64;
 
+        //TODO:supplement code for 'clock is moving backwards situation'..
             if now_millis == self.last_time_millis {
                 now_millis += 1;
+
+                //TODO: Relace sleep with loop. 
                 sleep(Duration::from_millis(1));
             }
 
             self.last_time_millis = now_millis;
         }
 
-        // 64 位，统一左移动 22位，保存后42位 ， xxxx， 最后自增保留12位
-        //然后进行或运算
+        //last_time_millis is 64 bits，left shift 22 bit，store 42 bits ， machine_id left shift 17 bits，
+        //node_id left shift 12 bits ,idx complementing bits.
         self.last_time_millis << 22
             | ((self.machine_id << 17) as i64)
             | ((self.node_id << 12) as i64)
