@@ -1,12 +1,10 @@
 //! The snowflake algorithm rust version.
 //!
 
-#![feature(test)]
 use std::{
     thread::sleep,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-extern crate test;
 
 /// The `SnowflakeIdGenerator` type is snowflake algorithm wrapper.
 #[derive(Copy, Clone)]
@@ -46,8 +44,7 @@ impl SnowflakeIdGenerator {
     /// let id_generator = SnowflakeIdGenerator::new(1, 1);
     /// ```
     pub fn new(machine_id: i32, node_id: i32) -> SnowflakeIdGenerator {
-
-        //TODO:limit the maximum of input args machine_id and node_id 
+        //TODO:limit the maximum of input args machine_id and node_id
         let last_time_millis = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went mackward")
@@ -88,7 +85,7 @@ impl SnowflakeIdGenerator {
         if now_millis == self.last_time_millis {
             //if that millis is exaust, wait....
             if self.idx == 0 {
-                //TODO: Relace sleep with loop. 
+                //TODO: Relace sleep with loop.
                 sleep(Duration::from_millis(1));
                 now_millis += 1;
                 self.last_time_millis = now_millis;
@@ -130,11 +127,11 @@ impl SnowflakeIdGenerator {
                 .expect("Time went mackward")
                 .as_millis() as i64;
 
-        //TODO:supplement code for 'clock is moving backwards situation'..
+            //TODO:supplement code for 'clock is moving backwards situation'..
             if now_millis == self.last_time_millis {
                 now_millis += 1;
 
-                //TODO: Relace sleep with loop. 
+                //TODO: Relace sleep with loop.
                 sleep(Duration::from_millis(1));
             }
 
@@ -223,7 +220,7 @@ impl SnowflakeIdBucket {
         self.bucket.pop().unwrap()
     }
 
-    pub(crate) fn generate_ids(&mut self) {
+    pub fn generate_ids(&mut self) {
         // 30,350 -- 50,000 ns/iter
         //self.bucket.push(self.snowflake_id_generator.lazy_generate());
 
@@ -234,86 +231,8 @@ impl SnowflakeIdBucket {
         //self.bucket.push(self.snowflake_id_generator.real_time_generate());
 
         for _ in 0..4091 {
-            self.bucket.push(self.snowflake_id_generator.generate());
+            self.bucket
+                .push(self.snowflake_id_generator.lazy_generate());
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use crate::{SnowflakeIdBucket, SnowflakeIdGenerator};
-    use test::Bencher;
-
-    #[test]
-    fn test_generate() {
-        let mut id_generator = SnowflakeIdGenerator::new(1, 1);
-        let mut ids = vec![];
-
-        for _ in 0..99 {
-            for _ in 0..10000 {
-                ids.push(id_generator.generate());
-            }
-
-            ids.sort();
-            ids.dedup();
-
-            assert_eq!(10000, ids.len());
-            println!("{}", ids[9999]);
-
-            ids.clear();
-        }
-    }
-
-    #[test]
-    fn test_real_time_generate() {
-        let mut id_generator = SnowflakeIdGenerator::new(1, 1);
-        let mut ids = vec![];
-
-        for _ in 0..99 {
-            for _ in 0..10000 {
-                ids.push(id_generator.real_time_generate());
-            }
-
-            ids.sort();
-            ids.dedup();
-
-            assert_eq!(10000, ids.len());
-            println!("{}", ids[9999]);
-
-            ids.clear();
-        }
-    }
-
-    #[test]
-    fn test_lazy_generate() {
-        let mut id_generator = SnowflakeIdGenerator::new(1, 1);
-        let mut ids = vec![];
-
-        for _ in 0..99 {
-            for _ in 0..10000 {
-                ids.push(id_generator.lazy_generate());
-            }
-
-            ids.sort();
-            ids.dedup();
-
-            assert_eq!(10000, ids.len());
-            println!("{}", ids[9999]);
-
-            ids.clear();
-        }
-    }
-
-    #[bench]
-    fn bench_generate(b: &mut Bencher) {
-        let mut snowflake_id_bucket = SnowflakeIdBucket::new(1, 1);
-        b.iter(|| snowflake_id_bucket.get_id());
-    }
-
-    #[bench]
-    fn bench_generate_ids(b: &mut Bencher) {
-        let mut snowflake_id_bucket = SnowflakeIdBucket::new(1, 1);
-        b.iter(|| snowflake_id_bucket.generate_ids());
     }
 }
