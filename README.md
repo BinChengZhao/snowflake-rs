@@ -4,7 +4,7 @@ The snowflake algorithm rust version.
 A crate for quick generating distributed-ids. 
 
 
-API Docs: https://docs.rs/rs-snowflake/0.3.0/snowflake/
+API Docs: https://docs.rs/rs-snowflake
 
 ## Usage
 
@@ -12,7 +12,7 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-rs-snowflake = "0.3.0"
+rs-snowflake = "0.4.0"
 ```
 
 
