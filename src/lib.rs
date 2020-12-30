@@ -7,7 +7,7 @@ use std::{
 };
 
 /// The `SnowflakeIdGenerator` type is snowflake algorithm wrapper.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct SnowflakeIdGenerator {
     /// last_time_millis, last time generate id is used times millis.
     last_time_millis: i64,
@@ -23,7 +23,7 @@ pub struct SnowflakeIdGenerator {
 }
 
 /// The `SnowflakeIdBucket` type is snowflake-id-bucket it easy to get id also have a id buffer.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SnowflakeIdBucket {
     /// Hidden the `SnowflakeIdGenerator` in bucket .
     snowflake_id_generator: SnowflakeIdGenerator,
@@ -58,7 +58,7 @@ impl SnowflakeIdGenerator {
         }
     }
 
-    /// The real_time_generate keep id generate time is eq call method time...
+    /// The real_time_generate keep id generate time is eq call method time.
     ///
     /// # Examples
     ///
@@ -79,7 +79,7 @@ impl SnowflakeIdGenerator {
             .expect("Time went mackward")
             .as_millis() as i64;
 
-        //TODO:supplement code for 'clock is moving backwards situation'..
+        //TODO:supplement code for 'clock is moving backwards situation'.
 
         //must use real-time millis generate.
         if now_millis == self.last_time_millis {
@@ -102,7 +102,7 @@ impl SnowflakeIdGenerator {
             | (self.idx as i64)
     }
 
-    /// The basic guarantee time punctuality...
+    /// The basic guarantee time punctuality.
     ///
     /// # Examples
     ///
@@ -146,7 +146,7 @@ impl SnowflakeIdGenerator {
             | (self.idx as i64)
     }
 
-    /// Thelazy generate...
+    /// The lazy generate.
     ///
     /// # Examples
     ///
