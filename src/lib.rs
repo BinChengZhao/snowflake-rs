@@ -1,10 +1,8 @@
-//! The snowflake algorithm rust version.
+//! Rust version of the `Twitter snowflake algorithm` .
 //!
 
-use std::{
-    thread::sleep,
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use std::hint::spin_loop;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// The `SnowflakeIdGenerator` type is snowflake algorithm wrapper.
 #[derive(Copy, Clone, Debug)]
@@ -13,10 +11,10 @@ pub struct SnowflakeIdGenerator {
     last_time_millis: i64,
 
     /// machine_id, is use to supplement id machine or sectionalization attribute.
-    machine_id: i32,
+    pub machine_id: i32,
 
     /// node_id, is use to supplement id machine-node attribute.
-    node_id: i32,
+    pub node_id: i32,
 
     /// auto-increment record.
     idx: u16,
@@ -45,10 +43,7 @@ impl SnowflakeIdGenerator {
     /// ```
     pub fn new(machine_id: i32, node_id: i32) -> SnowflakeIdGenerator {
         //TODO:limit the maximum of input args machine_id and node_id
-        let last_time_millis = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went mackward")
-            .as_millis() as i64;
+        let last_time_millis = get_time_millis();
 
         SnowflakeIdGenerator {
             last_time_millis,
@@ -71,30 +66,25 @@ impl SnowflakeIdGenerator {
     pub fn real_time_generate(&mut self) -> i64 {
         self.idx = (self.idx + 1) % 4096;
 
-        //if idx == 0 , check last_time_millis is not eq now_time_millis ,that can safe generate
-        //huozhe... sleep 1 millis...
+        let mut now_millis = get_time_millis();
 
-        let mut now_millis = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went mackward")
-            .as_millis() as i64;
+        //supplement code for 'clock is moving backwards situation'.
 
-        //TODO:supplement code for 'clock is moving backwards situation'.
-
-        //must use real-time millis generate.
+        // If the milliseconds of the current clock are equal to
+        // the number of milliseconds of the most recently generated id,
+        // then check if enough 4096 are generated,
+        // if enough then busy wait until the next millisecond.
         if now_millis == self.last_time_millis {
-            //if that millis is exaust, wait....
             if self.idx == 0 {
-                //TODO: Relace sleep with loop.
-                sleep(Duration::from_millis(1));
-                now_millis += 1;
+                now_millis = biding_time_conditions(self.last_time_millis);
                 self.last_time_millis = now_millis;
             }
         } else {
             self.last_time_millis = now_millis;
+            self.idx = 0;
         }
 
-        //last_time_millis is 64 bits，left shift 22 bit，store 42 bits ， machine_id left shift 17 bits，
+        // last_time_millis is 64 bits，left shift 22 bit，store 42 bits ， machine_id left shift 17 bits，
         // node_id left shift 12 bits ,idx complementing bits.
         self.last_time_millis << 22
             | ((self.machine_id << 17) as i64)
@@ -112,27 +102,18 @@ impl SnowflakeIdGenerator {
     /// let mut id_generator = SnowflakeIdGenerator::new(1, 1);
     /// id_generator.generate();
     /// ```
-    //basic guarantee time punctuality.
-    //sometimes one millis can't use up 4096 ID, the property of the ID isn't real-time.
-    //But setting time after every 4096 calls.
+    /// Basic guarantee time punctuality.
+    /// sometimes one millis can't use up 4096 ID, the property of the ID isn't real-time.
+    /// But setting time after every 4096 calls.
     pub fn generate(&mut self) -> i64 {
         self.idx = (self.idx + 1) % 4096;
 
-        //if idx == 0 , check last_time_millis is not eq now_time_millis ,that can safe generate
-        //huozhe... sleep 1 millis...
-
+        // Maintenance `last_time_millis` for every 4096 ids generated.
         if self.idx == 0 {
-            let mut now_millis = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("Time went mackward")
-                .as_millis() as i64;
+            let mut now_millis = get_time_millis();
 
-            //TODO:supplement code for 'clock is moving backwards situation'..
             if now_millis == self.last_time_millis {
-                now_millis += 1;
-
-                //TODO: Relace sleep with loop.
-                sleep(Duration::from_millis(1));
+                now_millis = biding_time_conditions(self.last_time_millis);
             }
 
             self.last_time_millis = now_millis;
@@ -156,9 +137,9 @@ impl SnowflakeIdGenerator {
     /// let mut id_generator = SnowflakeIdGenerator::new(1, 1);
     /// id_generator.lazy_generate();
     /// ```
-    //lazy generate.
-    //Just start time record last_time_millis it consume every millis ID.
-    //maybe faster than standing time.
+    /// Lazy generate.
+    /// Just start time record last_time_millis it consume every millis ID.
+    /// Maybe faster than standing time.
     pub fn lazy_generate(&mut self) -> i64 {
         self.idx = (self.idx + 1) % 4096;
 
@@ -234,5 +215,27 @@ impl SnowflakeIdBucket {
             self.bucket
                 .push(self.snowflake_id_generator.lazy_generate());
         }
+    }
+}
+
+#[inline(always)]
+/// Get the latest milliseconds of the clock.
+pub fn get_time_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went mackward")
+        .as_millis() as i64
+}
+
+#[inline(always)]
+// Constantly refreshing the latest milliseconds by busy waiting.
+fn biding_time_conditions(last_time_millis: i64) -> i64 {
+    let mut latest_time_millis: i64;
+    loop {
+        latest_time_millis = get_time_millis();
+        if latest_time_millis > last_time_millis {
+            return latest_time_millis;
+        }
+        spin_loop();
     }
 }
