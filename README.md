@@ -15,7 +15,6 @@ Add this to your Cargo.toml:
 rs-snowflake = "*"
 ```
 
-
 ## Getting Started
 
 ```rust
