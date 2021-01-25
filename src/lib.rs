@@ -94,6 +94,9 @@ impl SnowflakeIdGenerator {
 
     /// The basic guarantee time punctuality.
     ///
+    /// Basic guarantee time punctuality.
+    /// sometimes one millis can't use up 4096 ID, the property of the ID isn't real-time.
+    /// But setting time after every 4096 calls.
     /// # Examples
     ///
     /// ```
@@ -102,9 +105,6 @@ impl SnowflakeIdGenerator {
     /// let mut id_generator = SnowflakeIdGenerator::new(1, 1);
     /// id_generator.generate();
     /// ```
-    /// Basic guarantee time punctuality.
-    /// sometimes one millis can't use up 4096 ID, the property of the ID isn't real-time.
-    /// But setting time after every 4096 calls.
     pub fn generate(&mut self) -> i64 {
         self.idx = (self.idx + 1) % 4096;
 
@@ -129,6 +129,9 @@ impl SnowflakeIdGenerator {
 
     /// The lazy generate.
     ///
+    /// Lazy generate.
+    /// Just start time record last_time_millis it consume every millis ID.
+    /// Maybe faster than standing time.
     /// # Examples
     ///
     /// ```
@@ -137,9 +140,6 @@ impl SnowflakeIdGenerator {
     /// let mut id_generator = SnowflakeIdGenerator::new(1, 1);
     /// id_generator.lazy_generate();
     /// ```
-    /// Lazy generate.
-    /// Just start time record last_time_millis it consume every millis ID.
-    /// Maybe faster than standing time.
     pub fn lazy_generate(&mut self) -> i64 {
         self.idx = (self.idx + 1) % 4096;
 
@@ -201,7 +201,7 @@ impl SnowflakeIdBucket {
         self.bucket.pop().unwrap()
     }
 
-    pub fn generate_ids(&mut self) {
+    fn generate_ids(&mut self) {
         // 30,350 -- 50,000 ns/iter
         //self.bucket.push(self.snowflake_id_generator.lazy_generate());
 
