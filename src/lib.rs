@@ -7,6 +7,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// The `SnowflakeIdGenerator` type is snowflake algorithm wrapper.
 #[derive(Copy, Clone, Debug)]
 pub struct SnowflakeIdGenerator {
+    /// epoch used by the snowflake algorithm.
+    epoch: SystemTime,
+
     /// last_time_millis, last time generate id is used times millis.
     last_time_millis: i64,
 
@@ -31,7 +34,7 @@ pub struct SnowflakeIdBucket {
 }
 
 impl SnowflakeIdGenerator {
-    /// Constructs a new `SnowflakeIdGenerator`.
+    /// Constructs a new `SnowflakeIdGenerator` using the UNIX epoch.
     /// Please make sure that machine_id and node_id is small than 32(2^5);
     ///
     /// # Examples
@@ -42,10 +45,28 @@ impl SnowflakeIdGenerator {
     /// let id_generator = SnowflakeIdGenerator::new(1, 1);
     /// ```
     pub fn new(machine_id: i32, node_id: i32) -> SnowflakeIdGenerator {
+        Self::with_epoch(machine_id, node_id, UNIX_EPOCH)
+    }
+
+    /// Constructs a new `SnowflakeIdGenerator` using the specified epoch.
+    /// Please make sure that machine_id and node_id is small than 32(2^5);
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::time::{Duration, UNIX_EPOCH};
+    /// use snowflake::SnowflakeIdGenerator;
+    ///
+    /// // 1 January 2015 00:00:00
+    /// let discord_epoch = UNIX_EPOCH + Duration::from_millis(1420070400000);
+    /// let id_generator = SnowflakeIdGenerator::with_epoch(1, 1, discord_epoch);
+    /// ```
+    pub fn with_epoch(machine_id: i32, node_id: i32, epoch: SystemTime) -> SnowflakeIdGenerator {
         //TODO:limit the maximum of input args machine_id and node_id
-        let last_time_millis = get_time_millis();
+        let last_time_millis = get_time_millis(epoch);
 
         SnowflakeIdGenerator {
+            epoch,
             last_time_millis,
             machine_id,
             node_id,
@@ -66,7 +87,7 @@ impl SnowflakeIdGenerator {
     pub fn real_time_generate(&mut self) -> i64 {
         self.idx = (self.idx + 1) % 4096;
 
-        let mut now_millis = get_time_millis();
+        let mut now_millis = get_time_millis(self.epoch);
 
         //supplement code for 'clock is moving backwards situation'.
 
@@ -76,7 +97,7 @@ impl SnowflakeIdGenerator {
         // if enough then busy wait until the next millisecond.
         if now_millis == self.last_time_millis {
             if self.idx == 0 {
-                now_millis = biding_time_conditions(self.last_time_millis);
+                now_millis = biding_time_conditions(self.last_time_millis, self.epoch);
                 self.last_time_millis = now_millis;
             }
         } else {
@@ -110,10 +131,10 @@ impl SnowflakeIdGenerator {
 
         // Maintenance `last_time_millis` for every 4096 ids generated.
         if self.idx == 0 {
-            let mut now_millis = get_time_millis();
+            let mut now_millis = get_time_millis(self.epoch);
 
             if now_millis == self.last_time_millis {
-                now_millis = biding_time_conditions(self.last_time_millis);
+                now_millis = biding_time_conditions(self.last_time_millis, self.epoch);
             }
 
             self.last_time_millis = now_millis;
@@ -155,7 +176,7 @@ impl SnowflakeIdGenerator {
 }
 
 impl SnowflakeIdBucket {
-    /// Constructs a new `SnowflakeIdBucket`.
+    /// Constructs a new `SnowflakeIdBucket` using the UNIX epoch.
     /// Please make sure that machine_id and node_id is small than 32(2^5);
     ///
     /// # Examples
@@ -166,7 +187,24 @@ impl SnowflakeIdBucket {
     /// let id_generator_bucket = SnowflakeIdBucket::new(1, 1);
     /// ```
     pub fn new(machine_id: i32, node_id: i32) -> Self {
-        let snowflake_id_generator = SnowflakeIdGenerator::new(machine_id, node_id);
+        Self::with_epoch(machine_id, node_id, UNIX_EPOCH)
+    }
+
+    /// Constructs a new `SnowflakeIdBucket` using the specified epoch.
+    /// Please make sure that machine_id and node_id is small than 32(2^5);
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::time::{Duration, UNIX_EPOCH};
+    /// use snowflake::SnowflakeIdBucket;
+    ///
+    /// // 1 January 2015 00:00:00
+    /// let discord_epoch = UNIX_EPOCH + Duration::from_millis(1420070400000);
+    /// let id_generator_bucket = SnowflakeIdBucket::with_epoch(1, 1, discord_epoch);
+    /// ```
+    pub fn with_epoch(machine_id: i32, node_id: i32, epoch: SystemTime) -> Self {
+        let snowflake_id_generator = SnowflakeIdGenerator::with_epoch(machine_id, node_id, epoch);
         let bucket = Vec::new();
 
         SnowflakeIdBucket {
@@ -220,19 +258,19 @@ impl SnowflakeIdBucket {
 
 #[inline(always)]
 /// Get the latest milliseconds of the clock.
-pub fn get_time_millis() -> i64 {
+pub fn get_time_millis(epoch: SystemTime) -> i64 {
     SystemTime::now()
-        .duration_since(UNIX_EPOCH)
+        .duration_since(epoch)
         .expect("Time went mackward")
         .as_millis() as i64
 }
 
 #[inline(always)]
 // Constantly refreshing the latest milliseconds by busy waiting.
-fn biding_time_conditions(last_time_millis: i64) -> i64 {
+fn biding_time_conditions(last_time_millis: i64, epoch: SystemTime) -> i64 {
     let mut latest_time_millis: i64;
     loop {
-        latest_time_millis = get_time_millis();
+        latest_time_millis = get_time_millis(epoch);
         if latest_time_millis > last_time_millis {
             return latest_time_millis;
         }
