@@ -36,15 +36,15 @@ fn main() {
 
 
 ```
-test bench_generate_get_id_by_bucket                      ... bench:           7 ns/iter (+/- 0)
+test bench_generate_get_id_by_bucket                      ... bench:           5 ns/iter (+/- 0)
 
-test bench_generate_get_id_by_generator_general_version   ... bench:         246 ns/iter (+/- 21)
+test bench_generate_get_id_by_generator_general_version   ... bench:         232 ns/iter (+/- 32)
 
-test bench_generate_get_id_by_generator_lazy_version      ... bench:           4 ns/iter (+/- 0)
+test bench_generate_get_id_by_generator_lazy_version      ... bench:           2 ns/iter (+/- 0)
 
-test bench_generate_get_id_by_generator_real_time_version ... bench:         244 ns/iter (+/- 7)
+test bench_generate_get_id_by_generator_real_time_version ... bench:         249 ns/iter (+/- 22)
 
-test bench_generate_ids_by_bucket                         ... bench:      30,312 ns/iter (+/- 4,696)
+test bench_generate_ids_by_bucket                         ... bench:      13,077 ns/iter (+/- 1,263)
 
 ```
 
@@ -57,4 +57,4 @@ Licensed under
 
 ### Contribution
 
-Let me see, what do I write.
+Thank you all very much for your contributions to the project, and if there is anything I can do to help, I would love to help!

@@ -89,7 +89,7 @@ impl SnowflakeIdGenerator {
 
         let mut now_millis = get_time_millis(self.epoch);
 
-        //supplement code for 'clock is moving backwards situation'.
+        // supplement code for 'clock is moving backwards situation'.
 
         // If the milliseconds of the current clock are equal to
         // the number of milliseconds of the most recently generated id,
@@ -225,7 +225,7 @@ impl SnowflakeIdBucket {
     ///
     /// ```
     pub fn get_id(&mut self) -> i64 {
-        //247 ns/iter
+        // 247 ns/iter
         // after self.bucket.push(self.snowflake_id_generator.generate());
 
         // 7 ns/iter
